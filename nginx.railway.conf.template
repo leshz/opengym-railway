@@ -1,13 +1,19 @@
-# openGym — standalone web server: serves the static app AND proxies /api to the backend,
-# so the whole app lives on ONE origin (required for WebAuthn / passkeys).
+# openGym — Railway single-container web server.
+#
+# Serves the static SPA AND proxies /api to the API running alongside it in this same
+# container, so the whole app lives on ONE origin (required for WebAuthn / passkeys).
+#
+# Differs from upstream web/nginx.conf in exactly two ways:
+#   1. listen ${PORT}  — Railway assigns the port at runtime (envsubst'd by the entrypoint)
+#   2. proxy_pass to 127.0.0.1  — same container here, not a separate compose service
 server {
-    listen 80;
+    listen ${PORT};
     root /usr/share/nginx/html;
     index index.html;
 
-    # API → backend container
+    # API → node process in this container
     location /api/ {
-        proxy_pass http://api:3000;
+        proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -25,7 +31,7 @@ server {
         add_header Cache-Control "no-cache, must-revalidate";
     }
 
-    # Exercise images/GIFs never change → cache hard
+    # Static assets never change → cache hard
     location ~* \.(png|jpg|jpeg|gif|ico|svg|woff|woff2|webp|avif)$ {
         expires 30d;
         add_header Cache-Control "public, max-age=2592000, immutable";
