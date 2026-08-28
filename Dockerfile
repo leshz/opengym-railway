@@ -47,8 +47,9 @@ ENV NODE_ENV=production \
     DATA_DIR=/data \
     PORT=8080
 
-# Persisted on a Railway volume: accounts, passkeys, session secret, VAPID keys.
-VOLUME ["/data"]
+# /data holds accounts, passkeys, the session secret and VAPID keys. Railway manages the
+# volume itself and REJECTS a Dockerfile VOLUME instruction, so the mount is declared in the
+# service config (mount path /data) rather than here.
 EXPOSE 8080
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
