@@ -1,0 +1,13 @@
+# Runtime state — MUST NOT be committed.
+# Contains the session-signing secret, VAPID private keys, user accounts and
+# passkey credentials. On Railway this lives on the mounted volume at /data.
+data/
+
+# Exercise images/GIFs (~140 MB). This deployment serves them from a CDN
+# instead of shipping them into the image — see Dockerfile VITE_IMG_BASE.
+media/
+
+node_modules/
+dist/
+.env
+.DS_Store
