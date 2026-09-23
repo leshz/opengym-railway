@@ -1,9 +1,12 @@
 # openGym on Railway
 
-One-click deploy of [openGym](https://github.com/arvids-unavailable/openGym) — a self-hosted
+One-click deploy of [openGym](https://github.com/DuarteSantos8/openGym) — a self-hosted
 gym & body-weight tracker with passkey sign-in and no telemetry.
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/template/TEMPLATE_ID_PLACEHOLDER)
+
+This repository contains **only the Railway glue**. The application source is downloaded from
+the **latest upstream release** at build time, so every deploy ships the newest openGym version.
 
 This repository packages openGym as a **single Railway service**. Upstream ships a three-container
 `docker-compose` setup; Railway deploys services individually, so this image runs nginx and the API
@@ -63,11 +66,12 @@ Add it in Railway **before anyone registers**, then set `RP_ID` to the bare host
 | API routing | `proxy_pass http://api:3000` | `proxy_pass http://127.0.0.1:3000` |
 | Listen port | fixed `8080` | Railway's `$PORT`, injected at boot |
 | Exercise media | ~140 MB downloaded into a volume | served from jsDelivr CDN, pinned to a commit |
+| App source | the checked-out repo | cloned from the latest upstream release at build time |
 | Data | `./data` bind mount | Railway volume at `/data` |
 
-Application code in `api/` and `frontend/` is **unmodified**. Everything Railway-specific lives in
-`Dockerfile`, `nginx.railway.conf.template`, `docker-entrypoint.sh` and `railway.json`, which keeps
-merges from upstream clean.
+No application code lives here. The `Dockerfile` clones the upstream release and builds it the
+same way upstream's `web/Dockerfile` and `api/Dockerfile` do; nginx uses upstream's own
+`web/nginx.conf.template`, rendered by `docker-entrypoint.sh` with a same-container backend.
 
 ### Why one container
 
@@ -78,18 +82,16 @@ binding) or proxying between them anyway. One container is simpler and has fewer
 ### Why the CDN
 
 The exercise images and GIFs are ~140 MB. Baking them in would quadruple the image and slow every
-build, for assets that never change. The bundle points at jsDelivr, pinned to dataset commit
-`7455efae` — the same approach upstream's own `build:mobile` script uses. If jsDelivr is
+build, for assets that never change. The bundle points at jsDelivr, pinned to the dataset commit
+upstream's own `build:mobile` script uses (read from its `package.json` at build time). If jsDelivr is
 unreachable the app still works; only the exercise illustrations are missing.
 
 ---
 
 ## Not using Railway?
 
-This fork is Railway-specific: `docker-compose.yml` and the original `render.yaml` were removed
-because they don't apply here (upstream's compose file also referenced a `web/Dockerfile` that
-isn't in the repository). For the standard multi-container self-hosted setup, use the upstream
-project directly: <https://github.com/arvids-unavailable/openGym>
+Use the upstream project directly — it ships a `docker-compose.yml` and prebuilt images:
+<https://github.com/DuarteSantos8/openGym>
 
 ---
 
@@ -126,16 +128,23 @@ Individual users can also export their own data as JSON from Settings.
 
 ---
 
-## Updating from upstream
+## Updating openGym
 
-```bash
-git fetch upstream
-git merge upstream/main
-git push origin main
-```
+Nothing to merge. Each build resolves the newest stable release tag (`vX.Y.Z`) of
+`DuarteSantos8/openGym` and builds it. To pick up a new release, **redeploy the service** in
+Railway (or push any commit here). The deploy log prints the version it built, and the container
+logs `openGym vX.Y.Z starting` at boot.
 
-Railway redeploys on push. The Railway-specific files sit alongside the app code rather than
-modifying it, so conflicts should be rare.
+A new upstream release does **not** trigger a deploy on its own — it is picked up on the next one.
+
+**Pin or roll back** by setting the `UPSTREAM_REF` service variable to a tag (e.g. `v1.3.7`) and
+redeploying. Remove it (or set `latest`) to follow releases again.
+
+Take a volume backup before jumping several versions: upstream migrates `/data` forward, not back.
+
+If a release changes the build layout (renamed paths, new nginx template variables), the build or
+boot fails loudly and Railway keeps the previous deployment running. Pin `UPSTREAM_REF` to the last
+good tag and adjust `Dockerfile` / `docker-entrypoint.sh`.
 
 ---
 
@@ -153,9 +162,9 @@ modifying it, so conflicts should be rare.
 
 ## Credits & licence
 
-openGym is built by [@arvids-unavailable](https://github.com/arvids-unavailable) and licensed under
-**AGPL-3.0**. This repository is a deployment fork and inherits that licence — see [LICENSE](LICENSE).
-Because AGPL covers network use, anyone you host this for is entitled to the source; this repo is
-that source.
+openGym is built by [Duarte Santos](https://github.com/DuarteSantos8/openGym) and licensed under
+**AGPL-3.0** — see [LICENSE](LICENSE). This repository only packages the unmodified upstream
+release for Railway. Because AGPL covers network use, anyone you host this for is entitled to the
+source: the exact release is the tag printed at boot, plus this repository.
 
 Exercise media: [hasaneyldrm/exercises-dataset](https://github.com/hasaneyldrm/exercises-dataset) (CC).

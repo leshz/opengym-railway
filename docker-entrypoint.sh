@@ -11,8 +11,17 @@ set -eu
 # Railway's PORT; the API is pinned to 3000, which only nginx talks to.
 export PORT="${PORT:-8080}"
 
-# Only substitute ${PORT} — nginx's own $host/$uri/$scheme must survive untouched.
-envsubst '${PORT}' < /etc/nginx/nginx.conf.template > /etc/nginx/http.d/default.conf
+# nginx config is upstream's own web/nginx.conf.template, so its headers and proxy fixes
+# arrive with every release. It listens on NGINX_PORT and proxies /api to BACKEND:PORT —
+# rendered here in a subshell so PORT=3000 never leaks into the API's environment.
+# RESOLVER is required by the template but unused: an IP-literal backend needs no DNS.
+# Only these names are substituted; nginx's own $host/$uri/$scheme must survive untouched.
+(
+  export NGINX_PORT="$PORT" BACKEND=127.0.0.1 PORT=3000 RESOLVER=127.0.0.11
+  export CF_CONNECTING_IP="${CF_CONNECTING_IP:-}" BASE_PATH="${BASE_PATH:-}"
+  envsubst '${NGINX_PORT} ${BACKEND} ${PORT} ${RESOLVER} ${CF_CONNECTING_IP} ${BASE_PATH}' \
+    < /etc/nginx/nginx.conf.template > /etc/nginx/http.d/default.conf
+)
 
 # --- WebAuthn identity ----------------------------------------------------------------
 # Passkeys are bound to an exact hostname and require HTTPS. The Railway template sets
@@ -36,7 +45,7 @@ if ! touch "$DATA_DIR/.write-probe" 2>/dev/null; then
 fi
 rm -f "$DATA_DIR/.write-probe"
 
-echo "openGym starting — nginx :${PORT} → api :3000 | RP_ID=${RP_ID:-localhost} ORIGIN=${ORIGIN:-http://localhost:8080} DATA_DIR=${DATA_DIR}"
+echo "openGym $(cat /.upstream-ref 2>/dev/null || echo unknown) starting — nginx :${PORT} → api :3000 | RP_ID=${RP_ID:-localhost} ORIGIN=${ORIGIN:-http://localhost:8080} DATA_DIR=${DATA_DIR}"
 
 # --- Processes ------------------------------------------------------------------------
 # PORT=3000 is scoped to this command only, overriding the exported value above.

@@ -1,24 +1,9 @@
-# Runtime state — must never enter the image (it belongs on the Railway volume).
+# The build only needs Dockerfile and docker-entrypoint.sh; the app source is cloned from
+# upstream inside the build. Keep runtime state and local media out of the context.
 data/
-
-# Exercise media: served from a CDN, not baked in. This is the ~140 MB that would
-# otherwise quadruple the image size.
 media/
-
-# Native mobile shells — not part of the web deployment.
-frontend/android/
-frontend/ios/
-
-# Marketing site, screenshots and docs assets.
-website/
-assets/
-docs/
-
+odd/
 .git/
-.github/
-**/node_modules/
-**/dist/
 .env
 *.md
 .DS_Store
-**/.DS_Store
