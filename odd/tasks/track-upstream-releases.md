@@ -22,7 +22,7 @@ The repo vendored openGym v1.2.4 (via `arvids-unavailable/openGym`). The maintai
 ## Tasks
 - [x] T1 Dockerfile + entrypoint + upstream nginx template (route: inline)
 - [x] T2 Remove vendored code; README / env.example / .dockerignore (route: inline)
-- [ ] T3 Deploy to Railway production + verify health and version
+- [x] T3 Deploy to Railway production + verify health and version (route: inline, `railway up`)
 
 ## Verification evidence
 - `docker build` resolved `v1.3.8`; `--build-arg UPSTREAM_REF=v1.3.7` built v1.3.7; rebuild reused cache.
@@ -30,5 +30,10 @@ The repo vendored openGym v1.2.4 (via `arvids-unavailable/openGym`). The maintai
   `{"ok":true,"users":1}` (existing account kept), `X-Frame-Options: DENY` + CSP from upstream
   template, bundle points at jsDelivr `@7455efae…`, sample image 200, `coach` user present.
 
+- Railway: new service `opengym` in project `Shztech.dev` / `Production` (user choice), volume
+  `/data`, domain `opengym-production-3fc2.up.railway.app`. Build log `Building openGym v1.3.8`,
+  boot log `openGym v1.3.8 starting`, `/api/health` → `{"ok":true,"users":0}`, `x-frame-options: DENY`.
+
 ## Next step
-Confirm the Railway target (`opengym` project vs `Shztech.dev`), back up `/data`, deploy.
+Old service in project `opengym` (v1.2.4, existing accounts) still runs; user decides whether to
+migrate its `/data` or retire it. Optional: connect the service to GitHub for auto-deploys.
