@@ -19,7 +19,10 @@ export PORT="${PORT:-8080}"
 (
   export NGINX_PORT="$PORT" BACKEND=127.0.0.1 PORT=3000 RESOLVER=127.0.0.11
   export CF_CONNECTING_IP="${CF_CONNECTING_IP:-}" BASE_PATH="${BASE_PATH:-}"
-  envsubst '${NGINX_PORT} ${BACKEND} ${PORT} ${RESOLVER} ${CF_CONNECTING_IP} ${BASE_PATH}' \
+  # nginx body limit on /api/media/ (nginx syntax). Upstream's web image defaults it to 48m;
+  # left empty, nginx refuses to start ("client_max_body_size" directive invalid value).
+  export MEDIA_UPLOAD_MAX="${MEDIA_UPLOAD_MAX:-48m}"
+  envsubst '${NGINX_PORT} ${BACKEND} ${PORT} ${RESOLVER} ${CF_CONNECTING_IP} ${BASE_PATH} ${MEDIA_UPLOAD_MAX}' \
     < /etc/nginx/nginx.conf.template > /etc/nginx/http.d/default.conf
 )
 
