@@ -1,3 +1,7 @@
+> **Archived.** openGym on Railway now lives in **[leshz/openGym](https://github.com/leshz/openGym)**,
+> a fork of the maintained upstream [DuarteSantos8/openGym](https://github.com/DuarteSantos8/openGym).
+> See its [`railway/README.md`](https://github.com/leshz/openGym/blob/main/railway/README.md).
+
 # openGym on Railway
 
 One-click deploy of [openGym](https://github.com/arvids-unavailable/openGym) — a self-hosted
